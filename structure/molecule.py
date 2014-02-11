@@ -1,8 +1,13 @@
+from structure.bond import Bond
+
 class Molecule:
 	"""Defines a molecule, which can hold multiple atoms"""
 	def __init__(self):
 		self.atoms = [] # make an empty list of atoms on initiation
+		self.bonds = [] # make an empty list of atoms on initiation
 		self.nrat = 0
+	def setBoundingBox(self, mat):
+		self.boundingBox = mat
 	def addAtom(self, at):
 		self.atoms.append(at)
 		self.nrat += 1
@@ -49,9 +54,14 @@ class Molecule:
 		return (maxx-minx), (maxy-miny), (maxz-minz)
 	def direct2cartesian(self, mat):
 		for atom in self.atoms:
-			x = mat.g(1,1) * atom.x + mat.g(1,2) * atom.y + mat.g(1,3) * atom.z
-			y = mat.g(2,1) * atom.x + mat.g(2,2) * atom.y + mat.g(2,3) * atom.z
-			z = mat.g(3,1) * atom.x + mat.g(3,2) * atom.y + mat.g(3,3) * atom.z
+			x = mat.g(1,1) * atom.x + mat.g(2,1) * atom.y + mat.g(3,1) * atom.z
+			y = mat.g(1,2) * atom.x + mat.g(2,2) * atom.y + mat.g(3,2) * atom.z
+			z = mat.g(1,3) * atom.x + mat.g(2,3) * atom.y + mat.g(3,3) * atom.z
 			atom.x = x
 			atom.y = y
 			atom.z = z
+	def setBonds(self):
+		for i in range(0, len(self.atoms)):
+			for j in range(i+1, len(self.atoms)):
+				if self.atoms[i].dist(self.atoms[j]) < 3:
+					self.bonds.append(Bond(self.atoms[i].r, self.atoms[j].r))

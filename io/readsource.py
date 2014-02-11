@@ -69,5 +69,6 @@ def readPOSCAR(poscar, elements):
 				at = Atom(el,x,y,z)
 				mol.addAtom(at)
 
+	mol.setBoundingBox(mat)
 	mol.direct2cartesian(mat)
 	return mol

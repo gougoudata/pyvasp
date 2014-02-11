@@ -20,6 +20,7 @@ elements = readPOTCAR("POTCAR")
 mol = readPOSCAR("POSCAR", elements)
 mol.center()
 mol.printToXYZ()
+mol.setBonds()
 
 # Some api in the chain is translating the keystrokes to this octal string
 # so instead of saying: ESCAPE = 27, we use the following.
@@ -80,12 +81,16 @@ def DrawGLScene():
 
 	glPushMatrix()
 	glLoadIdentity()					# Reset The View 
-	glTranslatef(0, 0, -dimz*1.5);
+	glTranslatef(0, 0, -mol.boundingBox.g(3,3)*1.5);
 	glRotatef(rtri, 0.0, 1.0, 0.0);
 	glRotatef(ltri, 1.0, 0.0, 0.0);
 
 	for atom in mol.atoms:
 		drawAtom(atom)
+	for bond in mol.bonds:
+		drawBond(bond)
+
+	drawBoundingBox(mol.boundingBox)
 
 	glPopMatrix()
 
@@ -99,6 +104,72 @@ def drawAtom(atom):
 	glColor3f(color[0], color[1], color[2]);
 	glutSolidSphere(atom.getRadius(), 30, 30);
 	glPopMatrix();
+
+def drawBond(bond):
+	drawCylinder(bond.r1, bond.r2, 0.3, [0.2,0.2,0.2])
+
+def drawBoundingBox(mat):
+	vec0 = [0,0,0]
+	vec1 = [mat.g(1,1),mat.g(1,2),mat.g(1,3)]
+	vec2 = [mat.g(2,0),mat.g(2,2),mat.g(2,3)]
+	vec3 = [mat.g(3,1),mat.g(3,2),mat.g(3,3)]
+	vec4 = [x+y for x,y in zip(vec1,vec2)]
+	vec5 = [x+y for x,y in zip(vec2,vec3)]
+	vec6 = [x+y for x,y in zip(vec1,vec3)]
+	vec7 = [x+y for x,y in zip(vec4,vec3)]
+
+	vx = (mat.g(1,1)+mat.g(2,1)+mat.g(3,1))/2
+	vy = (mat.g(1,2)+mat.g(2,2)+mat.g(3,2))/2
+	vz = (mat.g(1,3)+mat.g(2,3)+mat.g(3,3))/2
+	center = [vx, vy, vz]
+
+	vec0 = [x-y for x,y in zip(vec0,center)]
+	vec1 = [x-y for x,y in zip(vec1,center)]
+	vec2 = [x-y for x,y in zip(vec2,center)]
+	vec3 = [x-y for x,y in zip(vec3,center)]
+	vec4 = [x-y for x,y in zip(vec4,center)]
+	vec5 = [x-y for x,y in zip(vec5,center)]
+	vec6 = [x-y for x,y in zip(vec6,center)]
+	vec7 = [x-y for x,y in zip(vec7,center)]
+
+	diameter = 0.1
+	color = [0,0,0]
+
+	drawCylinder(vec0, vec1, diameter, color)
+	drawCylinder(vec0, vec2, diameter, color)
+	drawCylinder(vec0, vec3, diameter, color)
+	drawCylinder(vec1, vec4, diameter, color)
+	drawCylinder(vec1, vec6, diameter, color)
+	drawCylinder(vec2, vec4, diameter, color)
+	drawCylinder(vec2, vec5, diameter, color)
+	drawCylinder(vec3, vec5, diameter, color)
+	drawCylinder(vec3, vec6, diameter, color)
+	drawCylinder(vec4, vec7, diameter, color)
+	drawCylinder(vec5, vec7, diameter, color)
+	drawCylinder(vec6, vec7, diameter, color)
+
+def drawCylinder(vec1, vec2, radius, color):
+	vx = vec2[0] - vec1[0];
+	vy = vec2[1] - vec1[1];
+	vz = vec2[2] - vec1[2];
+
+	height = math.sqrt(vx**2 + vy**2 + vz**2)
+	if vz == 0:
+		vz = 0.0001
+
+	ax = 57.2957795 * math.acos( vz / height)
+	if(vz < 0):
+		ax *= -1
+	rx = -vy * vz
+	ry = vx * vz
+
+	glPushMatrix()
+	glTranslate(vec1[0],vec1[1],vec1[2])
+	glRotatef(ax, rx, ry, 0.0)
+	quadObj = gluNewQuadric()
+	glColor3f(color[0], color[1], color[2])
+	gluCylinder(quadObj, radius, radius, height, 30, 10)
+	glPopMatrix()
 
 # The function called whenever a key is pressed. Note the use of Python tuples to pass in: (key, x, y)  
 def keyPressed(*args):
